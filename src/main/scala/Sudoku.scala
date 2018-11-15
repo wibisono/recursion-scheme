@@ -2,39 +2,41 @@ import matryoshka._, implicits._, data._
 import scalaz._
 
 object Sudoku extends App  {
+  val N = 3
+  sealed trait Cell
+  case class Fill(value : Int) extends Cell
+  case class Slot(possible : List[Int]) extends Cell
 
+  val empty = Slot( (1 to N).toList)
 
-  type Row = Array[Int]
-  type Rows = Array[Row]
+  type Cells = Array[Cell]
+
 
   sealed abstract class Board[A]
-  case class Solved[A]( rows : Rows) extends Board[A]
-  case class Candidate[A]( childs : List[A]) extends Board[A]
-  case class Init[A]( rows : Rows) extends Board[A]
+  case class Solved[A]( rows : Cells) extends Board[A]
+  case class Choice[A](child : List[A]) extends Board[A]
 
- implicit val boardFunctor = new scalaz.Functor[Board] {
-    override def map[A, B](fa: Board[A])(f: (A) => B) = fa match {
+ implicit val boardFunctor: Functor[Board] = new scalaz.Functor[Board] {
+    override def map[A, B](fa: Board[A])(f: (A) => B): Board[B] = fa match {
       case Solved(rows) => Solved[B](rows)
-      case Init(rows) => Init[B](rows)
-      case Candidate(childs) => Candidate(childs.map(f))
+      case Choice(childs) => Choice(childs.map(f))
     }
   }
 
 val show: Algebra[Board, String] = {
-  case Solved(rows) => rows.map(_.mkString(" ")).mkString("\n")
-  case Init(rows) => rows.map(_.mkString(" ")).mkString("\n")
-  case Candidate(childs) => childs.mkString("\n--|--\n")
+  case Solved(cells) => cells.sliding(N,N).map(_.mkString(" ")).mkString("\n")
+  case Choice(childs) => childs.mkString("\n--|--\n")
 }
 
-val gen: Coalgebra[Board, Rows] = rows => {
-  if(rows.length<10) Candidate( List((1+:rows.head) +: rows))
-    else Solved(rows)
+val gen: Coalgebra[Board, Cells] = rows => {
+   Solved(rows)
 }
 
-val init = Array(Array(1,2,3))
+val init: Array[Cell] = (1 to 9).toArray.map(_=>empty)
+
 
 println(hylo(init)(show, gen))
 
-println(init(0)(0))
+
 
 }

@@ -37,8 +37,8 @@ object Expr extends App {
   println(generate.cata(show))
   println(hylo(12L)(eval,pluses))
 
-
-  val fact: GCoalgebra[\/[Fix[Expr], ?], Expr, Long] = x => {
+  type EitherFix[T] = \/[Fix[Expr], T]
+  val fact: GCoalgebra[EitherFix, Expr, Long] = x => {
     if(x>1)  Mul(-\/(Fix(Num(x))), \/-(x-1)) else Num(1)
   }
 
@@ -46,4 +46,5 @@ object Expr extends App {
 
   println(expFact.cata(show))
   println(expFact.cata(eval))
+
 }
